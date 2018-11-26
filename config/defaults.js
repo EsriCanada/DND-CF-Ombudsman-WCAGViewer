@@ -21,11 +21,11 @@ define({
         "appid":  null, //
              //"440b2da51b2b42878e8cb946c2de0326", //Farmers Markets
              //"142adb5e5e1d4bddb578aefc6f6e6deb", // TH Demo
-    "webmap":  "116178b11f0f41bb9b1c7c96aa09fd5a", 
-    		 //"fe35efe129f845ef8de5296c15325118", // MAtt English 
+    "webmap":  "116178b11f0f41bb9b1c7c96aa09fd5a",
+    		 //"fe35efe129f845ef8de5296c15325118", // MAtt English
              //"326320c9eab3489d8d17bc389ce1e023",
 
-    "oauthappid": "", //"i0sXrSseaL5Ifovc", 
+    "oauthappid": "", //"i0sXrSseaL5Ifovc",
     "portalUrl": "https://www.arcgis.com",
     //Group templates must support a group url parameter. This will contain the id of the group.
     //group: "",
@@ -65,12 +65,16 @@ define({
         {"name": "details", "enabled": false},
         {"name": "overview", "enabled": true},
         {"name": "legend", "enabled": true},
+        {"name": "layerManager", "enabled": true},
         {"name": "layers", "enabled": true},
+        {"name": "mapKeyboardNavigation", "enabled": false},
+        {"name": "infoPanel", "enabled": false},
+        {"name": "geoCoding", "enabled": false},
         {"name": "basemap", "enabled": true},
         {"name": "features", "enabled": true},
         {"name": "filter", "enabled": true},
         {"name": "measure", "enabled": true},
-        {"name": "edit", "enabled": true, "toolbar": true}, 
+        {"name": "edit", "enabled": true, "toolbar": true},
         {"name": "share", "enabled": true},
         {"name": "bookmarks", "enabled": true},
         {"name": "navigation", "enabled": true},
@@ -82,11 +86,15 @@ define({
     //Add the geocoding tool next to the title bar.
     "search": true,
     "locationSearch": true,
+    "maxSearchResults": 10,
+    "showSearchScore": true,
+    "countryCodeSearch": "",
+
     //When searchExtent is true the locator will prioritize results within the current map extent.
     "searchExtent": true,
     "searchLayers":[{
-        "id": "Incidents",
-        "fields": ["Incident Type", "Province", "Company", "Status", "Substance"]
+        // "id": "Incidents",
+        // "fields": ["Incident Type", "Province", "Company", "Status", "Substance"]
     }],
     //Add the home extent button to the toolbar
     "home": true,
@@ -96,6 +104,7 @@ define({
     "scalebar": false,
     //Specify a title for the application. If not provided the web map title is used.
     "title": "",
+    "moreHelpURL" : "",
     "level": null,
     "center": null,
     //Replace these with your own bitly key

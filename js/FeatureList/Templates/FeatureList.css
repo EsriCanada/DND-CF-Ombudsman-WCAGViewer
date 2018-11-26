@@ -1,4 +1,5 @@
 #featuresList {
+    font-family: 'Roboto Condensed', sans-serif;
     list-style: none;
     margin: 0px;
     padding-left: 0;
@@ -20,6 +21,18 @@
     text-align: left;
 }
 
+.FeatureTableAttributes th {
+    font-weight: normal;
+}
+.FeatureTableAttributes td {
+    font-weight: bold;
+}
+
+.featureContent {
+    margin-left: -8px;
+    margin-right: -4px;
+}
+
 /*.featureItem tr .filterBtn {
     width:18px;
     height:18px;
@@ -34,3 +47,6 @@
 
 
 
+/*.featureItem table, .featureItem table TH, .featureItem table, td {
+    border: 1px black solid;
+}*/

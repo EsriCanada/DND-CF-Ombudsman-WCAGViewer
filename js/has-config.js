@@ -104,6 +104,30 @@ define(["dojo/has"], function (has) {
         }
         return features;
     });
+    has.add("infoPanel", function (g) {
+        var infoPanel = getTool("infoPanel", g.config);
+        //overwrite the default with app settings
+        if (g.config.hasOwnProperty("tool_infoPanel")) {
+            infoPanel = g.config.tool_infoPanel;
+        }
+        return infoPanel;
+    });
+    has.add("geoCoding", function (g) {
+        var geoCoding = getTool("geoCoding", g.config);
+        //overwrite the default with app settings
+        if (g.config.hasOwnProperty("tool_GeoCoding")) {
+            geoCoding = g.config.tool_GeoCoding;
+        }
+        return geoCoding;
+    });
+    has.add("mapKeyboardNavigation", function (g) {
+        var mapKeyboardNavigation = g.config.tool_mapKeyboardNavigation || false;
+        //overwrite the default with app settings
+        if (g.config.hasOwnProperty("tool_mapKeyboardNavigation")) {
+            mapKeyboardNavigation = g.config.tool_mapKeyboardNavigation;
+        }
+        return mapKeyboardNavigation;
+    });
     has.add("filter", function (g) {
         var filter = getTool("filter", g.config);
         //overwrite the default with app settings
@@ -112,6 +136,15 @@ define(["dojo/has"], function (has) {
         }
         return filter;
     });
+    has.add("layerManager", function (g) {
+        var layerManager = getTool("layerManager", g.config);
+        //overwrite the default with app settings
+        if (g.config.hasOwnProperty("tool_layerManager")) {
+            layerManager = g.config.tool_layerManager;
+        }
+        return layerManager;
+    });
+
     has.add("layers", function (g) {
         var layers = getTool("layers", g.config);
         //overwrite the default with app settings
@@ -119,6 +152,14 @@ define(["dojo/has"], function (has) {
             layers = g.config.tool_layers;
         }
         return layers;
+    });
+    has.add("featureTable", function (g) {
+        var featureTable = getTool("featureTable", g.config);
+        //overwrite the default with app settings
+        if (g.config.hasOwnProperty("tool_featureTable")) {
+            featureTable = g.config.tool_featureTable;
+        }
+        return featureTable;
     });
     has.add("instructions", function (g) {
         var instructions = getTool("instructions", g.config);

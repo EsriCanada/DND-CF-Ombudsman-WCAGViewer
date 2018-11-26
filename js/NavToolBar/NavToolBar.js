@@ -1,23 +1,23 @@
 define([
-    "dojo/Evented", "dojo/_base/declare", "dojo/_base/lang", "dojo/has", "dojo/dom","esri/kernel", 
+    "dojo/Evented", "dojo/_base/declare", "dojo/_base/lang", "dojo/has", "dojo/dom","esri/kernel",
     "dijit/_WidgetBase", "dijit/_TemplatedMixin", "dojo/on",
     "dojo/query", "esri/toolbars/navigation", "dijit/registry",
-    "esri/dijit/HomeButton", "esri/dijit/LocateButton", 
+    "esri/dijit/HomeButton", "esri/dijit/LocateButton",
     "esri/symbols/SimpleLineSymbol", "esri/Color",
-    "dojo/text!application/NavToolBar/templates/NavToolBar.html", 
+    "dojo/text!application/NavToolBar/Templates/NavToolBar.html",
     "dojo/i18n!application/nls/NavToolBar",
-    "dojo/dom-class", "dojo/dom-attr", "dojo/dom-style", 
-    "dojo/dom-construct", "dojo/_base/event", 
+    "dojo/dom-class", "dojo/dom-attr", "dojo/dom-style",
+    "dojo/dom-construct", "dojo/_base/event",
     "dojo/NodeList-dom", "dojo/NodeList-traverse"
-    
+
     ], function (
         Evented, declare, lang, has, dom, esriNS,
-        _WidgetBase, _TemplatedMixin, on, 
+        _WidgetBase, _TemplatedMixin, on,
         query, Navigation, registry,
-        HomeButton, LocateButton, 
+        HomeButton, LocateButton,
         SimpleLineSymbol, Color,
         NavToolBarTemplate, i18n,
-        domClass, domAttr, domStyle, 
+        domClass, domAttr, domStyle,
         domConstruct, event
     ) {
     var Widget = declare("esri.dijit.NavToolBar", [_WidgetBase, _TemplatedMixin, Evented], {
@@ -53,9 +53,12 @@ define([
                 }));
             }
         },
-        
+
+        __init:false,
+
         _init: function () {
-            //if(!dom.byId("navZoomIn")) return;
+            if(this.__init) return;
+
             this.nav.setZoomSymbol(new SimpleLineSymbol("SOLID", new Color(this.zoomColor), 4));
 
             dojo.empty(this.navToolBar);
@@ -93,10 +96,10 @@ define([
                 dojo.destroy("navHome");
             }
 
-            var isLocationEnabled = !(!!window.chrome && !!window.chrome.webstore) || 
-                (window.location.protocol === "https:") || 
-                (window.location.hostname === "localhost");
-            if (has("locate") && isLocationEnabled) {
+            // var isLocationEnabled = //!(!!window.chrome && !!window.chrome.webstore) ||
+            //     (window.location.protocol === "https:") ||
+            //     (window.location.hostname === "localhost");
+            if (has("locate")) {// && isLocationEnabled) {
                 var geoLocate = new LocateButton({
                     map: this.map
                 }, domConstruct.create("div",{},dom.byId("navLocate")));
@@ -148,7 +151,9 @@ define([
                 on(dom.byId("extenderNavCheckbox"), "change", lang.hitch(this, function(e) {
                     var ck = e.target.checked;
 
-                    dojo.setStyle(dom.byId("extendedTools"), "display", ck?"inherit":"none");
+                    if(_gaq) _gaq.push(['_trackEvent', "Extended Navigator Bar", e.target.checked ? 'Expand' : 'Collapse']);
+
+                    dojo.setStyle(dom.byId("extendedTools"), "display", ck?"":"none");
                     this.nav.deactivate();
                     this.map.setMapCursor("default");
                 }));
@@ -157,14 +162,14 @@ define([
                 dojo.destroy("navPrevNext");
                 dojo.destroy("ZoomTools");
                 dojo.destroy("extenderNav");
-                dojo.setStyle(dom.byId("extendedTools"), "display", "inherit");
+                dojo.setStyle(dom.byId("extendedTools"), "display", "");
             }
 
             this.nav.on("extent-history-change", lang.hitch(this, function () {
                 var zoom = this.map.getZoom();
                 this.tryDisableBtn("navZoomIn", zoom == this.map.getMaxZoom());
                 this.tryDisableBtn("navZoomOut", zoom == this.map.getMinZoom());
-                this.tryDisableBtn("navHome",window.initExt === this.map.extent);
+                this.tryDisableBtn("navHome", window.initExt === this.map.extent);
                 if(has("navigation")) {
                     this.tryDisableBtn("navPrev",this.nav.isFirstExtent());
                     this.tryDisableBtn("navNext",this.nav.isLastExtent());
@@ -173,14 +178,8 @@ define([
                 }
             }));
 
-            // on(dom.byId("testBtn"), "click", lang.hitch(this, function(e) {
-            //     this.map._createLabelLayer();
-            // }));
-
-
+            this.__init = true;
         },
-
-        //disTabs : 1,
 
         tryDisableBtn:function(id, disable) {
             var div = query("#"+id)[0];
@@ -191,23 +190,15 @@ define([
             dojo.setStyle(div, "cursor", crs);
             dojo.setStyle(dis, "cursor", crs);
             dojo.setAttr(btn, "tabIndex", disable?-1:0);
-            // if(this.disTabs>=0 && disable) {
-            //     this.disTabs-=1;
-            // } else {
-            //     dojo.setAttr(dis, "tabIndex", disable?-1:0);
-            // }
-            //dojo.setStyle(btn, "pointer-events", disable?"none":"all");
-            // if(disable && dojo.getStyle(dis, "display") !== "none" )
-            //     this.blurAll();//dojo.getAttr(dis, 'aria-label'));
-            dojo.setStyle(dis, "display", disable?"inherit":"none");
+            dojo.setStyle(dis, "display", disable?null:"none");
+            dojo.setAttr(btn, "aria-hidden", disable?"true":"false");
             return disable;
         },
 
         blurAll: function(text) {
-            if(text===undefined) 
+            if(text===undefined)
                 text='';
             var tmp = domConstruct.create("div", {tabindex:0, 'aria-label':text}, document.body);
-            //document.body.appendChild(tmp);
             tmp.focus();
             document.body.removeChild(tmp);
         }

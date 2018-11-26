@@ -1,4 +1,38 @@
-"use strict"
+"use strict" 
+
+function isIE11() 
+{ 
+    return (
+        (navigator.appName == 'Microsoft Internet Explorer') || 
+        (
+            (navigator.appName == 'Netscape') && 
+            (new RegExp("Trident/.*rv:([0-9]{1,}[\.0-9]{0,})").exec(navigator.userAgent) != null))
+        ); 
+}
+
+function isChrome() {
+    return ((navigator.userAgent.toLowerCase().indexOf('chrome') > -1) &&(navigator.vendor.toLowerCase().indexOf("google inc.") > -1));
+}
+
+if (!Element.prototype.matches)
+    Element.prototype.matches = Element.prototype.msMatchesSelector || 
+                                Element.prototype.webkitMatchesSelector;
+
+if (!Element.prototype.closest)
+    Element.prototype.closest = function(s) {
+        var el = this;
+        var ancestor = this;
+        if (!document.documentElement.contains(el)) return null;
+        do {
+            try {
+                if (ancestor.matches(s)) return ancestor;
+            } catch (ex) {
+                return null;
+            }
+            ancestor = ancestor.parentElement;
+        } while (ancestor !== null); 
+        return null;
+    };
 
 Number.prototype.padLeft = function (n,str){
     return new Array(n-String(this).length+1).join(str||'0')+this;
@@ -38,6 +72,12 @@ if (!('trim' in String.prototype)) {
     };
 }
 
+if (!('isNonEmpty' in String.prototype)) {
+    String.prototype.isNonEmpty= function() {
+        return this !== null && this.trim() !== '' && this !== undefined;
+    };
+}
+
 // if (!Array.prototype.remove) {
 // 	Array.prototype.remove = function() {
 // 	    var what, a = arguments, L = a.length, ax;
@@ -52,6 +92,18 @@ if (!('trim' in String.prototype)) {
 // }
 // Add ECMA262-5 Array methods if not supported natively
 //
+if (!Array.prototype.contains) {
+    Array.prototype.contains = function(obj) {
+        var i = this.length;
+        while (i--) {
+            if (this[i] === obj) {
+                return true;
+            }
+        }
+        return false;
+    };
+}
+
 if (!Array.prototype.find) {
   Array.prototype.find = function(predicate) {
     if (this === null) {
@@ -74,6 +126,7 @@ if (!Array.prototype.find) {
     return undefined;
   };
 }
+
 if (!('indexOf' in Array.prototype)) {
     Array.prototype.indexOf= function(find, i /*opt*/) {
         if (i===undefined) i= 0;
@@ -98,7 +151,8 @@ if (!('lastIndexOf' in Array.prototype)) {
 }
 if (!('forEach' in Array.prototype)) {
     Array.prototype.forEach= function(action, that /*opt*/) {
-        for (var i= 0, n= this.length; i<n; i++)
+        var n=this.length;
+        for (var i= 0; i<n; i++)
             if (i in this)
                 action.call(that, this[i], i, this);
     };
@@ -137,3 +191,39 @@ if (!('some' in Array.prototype)) {
         return false;
     };
 }
+
+if (!('copyToClipboard' in String.prototype)) {
+    String.prototype.copyToClipboard= function() {
+        // https://stackoverflow.com/questions/400212/how-do-i-copy-to-the-clipboard-in-javascript
+        var textArea = document.createElement("textarea");
+        textArea.style.position = 'fixed';
+        textArea.style.top = 0;
+        textArea.style.left = 0;
+        textArea.style.width = '2em';
+        textArea.style.height = '2em';
+        textArea.style.padding = 0;
+        textArea.style.border = 'none';
+        textArea.style.outline = 'none';
+        textArea.style.boxShadow = 'none';
+        textArea.style.background = 'transparent';
+
+        textArea.value = this;
+
+        document.body.appendChild(textArea);
+
+        textArea.select();
+
+        try {
+            // var successful = 
+            document.execCommand('copy');
+            // var msg = successful ? 'successful' : 'unsuccessful';
+            // console.log('Copying text command was ' + msg);
+        } catch (err) {
+            console.log('Error: unable to copy to clipboard.');
+        }
+
+        document.body.removeChild(textArea);
+
+    };
+}
+

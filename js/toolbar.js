@@ -1,10 +1,10 @@
 define([
-    "dojo/Evented", "dojo/_base/declare", "dojo/_base/window", "dojo/_base/fx", 
-    "dojo/_base/html", "dojo/_base/lang", "dojo/has", "dojo/dom", 
-    "dojo/dom-class", "dojo/dom-style", "dojo/dom-attr", "dojo/dom-construct", "dojo/dom-geometry", 
+    "dojo/Evented", "dojo/_base/declare", "dojo/_base/window", "dojo/_base/fx",
+    "dojo/_base/html", "dojo/_base/lang", "dojo/has", "dojo/dom",
+    "dojo/dom-class", "dojo/dom-style", "dojo/dom-attr", "dojo/dom-construct", "dojo/dom-geometry",
     "dojo/on", "dojo/mouse", "dojo/query", "dojo/Deferred"], function (
-Evented, declare, win, fx, html, lang, has, dom, 
-domClass, domStyle, domAttr, domConstruct, domGeometry, 
+Evented, declare, win, fx, html, lang, has, dom,
+domClass, domStyle, domAttr, domConstruct, domGeometry,
 on, mouse, query, Deferred) {
     return declare([Evented], {
         map: null,
@@ -26,7 +26,7 @@ on, mouse, query, Deferred) {
                 lang.hitch(this, function (config) {
                     // optional ready event to listen to
                     this.emit("ready", config);
-                }), 
+                }),
                 lang.hitch(this, function (error) {
                     // optional error event to listen to
                     this.emit("error", error);
@@ -109,23 +109,22 @@ on, mouse, query, Deferred) {
             var tip = this.config.i18n.tooltips[name] || name;
             var panelTool = domConstruct.create("div", {
                 className: "panelTool",
-                tabindex: -1,
                 id: "toolButton_" + name,
                 autofocus: true,
-                // "aria-label": tip,
+                // tabindex: -1,
+                tabindex: 0,
+                "aria-label": tip,
+                'data-tip': tip,
             }, refNode);
             var pTool = domConstruct.create("input", {
                 type: "image",
                 src: "images/icons_" + this.config.icons + "/" + name + ".png",
-                title: tip,
+                // title: tip,
+                tabindex:-1,
                 alt: tip
             }, panelTool);
 
-            if (!has("touch")) 
-            {
-                domAttr.set(pTool, "title", tip);
-            }
-
+            on(panelTool, "keypress", lang.hitch(this, this._toolKeyPress));
 
             if(badgeEvName && badgeEvName !== '') {
                 var setIndicator = domConstruct.create("img", {
@@ -158,9 +157,9 @@ on, mouse, query, Deferred) {
 
             var pageHeader = domConstruct.create("div", {
                 id: "pageHeader_" + name,
-                className: "pageHeader fr bg",
+                className: "pageHeader fc bg",
                 //tabindex: 0,
-            }, 
+            },
             pageContent);
 
             domConstruct.create("h2", {
@@ -172,7 +171,7 @@ on, mouse, query, Deferred) {
 
             if(loaderImg && loaderImg !=="") {
                 domConstruct.create('img',{
-                    src: 'images/reload1.gif',
+                    src: 'images/'+loaderImg,//reload1.gif',
                     alt: 'Reloading',
                     title: 'Reloading'
                 }, domConstruct.create("div", {
@@ -190,19 +189,49 @@ on, mouse, query, Deferred) {
                 className: "pageBody",
                 tabindex: 0,
                 id: "pageBody_" + name,
-            }, 
+            },
             pageContent);
             domClass.add(pageBody, panelClass);
 
-            on(this, "updateTool_" + name, lang.hitch(this, function(name) {
-                pageBody.focus();
+            on(this, "updateTool_" + name, lang.hitch(name, function() {
+                // var page = dom.byId('pageBody_'+this);
+                // if(page) page.focus();
+                var focusables = dojo.query('#pageBody_'+this+' [tabindex=0]');
+                if(focusables && focusables.length>0){
+                    focusables[0].focus();
+                }
             }));
 
             return pageBody;
         },
 
-       _toolClick: function (name) {
-            
+        OpenTool: function(name) {
+            var page = dom.byId("page_"+name);
+            var hidden = page.classList.contains("hideAttr");
+            if(!hidden) return;
+            var btn = dom.byId('toolButton_'+name);
+            this._toolClick(name);
+        },
+
+        IsToolSelected: function(name) {
+            var page = dom.byId("page_"+name);
+            if(!page) return false;
+            var hidden = page.classList.contains("hideAttr");
+            return !hidden;
+        },
+
+        _toolKeyPress: function(ev) {
+            var target = ev.target;
+            if(ev.keyCode===13) {
+                var input = dojo.query("input", target);
+                if(input) {
+                    input[0].click();
+                }
+            }
+        },
+
+        _toolClick: function (name) {
+
             var defaultBtns = dojo.query(".panelToolDefault");
             var defaultBtn;
             if(defaultBtns !== undefined && defaultBtns.length > 0) {
@@ -220,24 +249,27 @@ on, mouse, query, Deferred) {
                 }
             });
 
-            pages.forEach(function(p){
+            if(_gaq) _gaq.push(['_trackEvent', "Tool: '"+name+"'", 'selected']);
+
+            pages.forEach(lang.hitch(this, function(p){
                 if(hidden && p === page) {
                     domClass.replace(p, "showAttr","hideAttr");
+                    this.emit("updateTool", name);
+                    this.emit("updateTool_"+name);
                 } else {
                     domClass.replace(p,"hideAttr","showAttr");
                 }
-            });
+            }));
             var tool = dom.byId("toolButton_"+name);
-            var tools = query(".panelTool");           
-            this.emit("updateTool", name);
+            var tools = query(".panelTool");
             tools.forEach(lang.hitch(this, function(t){
                 if(active && t === tool) {
                     domClass.add(t, "panelToolActive");
-                    this.emit("updateTool_"+name);
+                    // this.emit("updateTool_"+name);
                 } else {
                     domClass.remove(t,"panelToolActive");
                 }
-            }));           
+            }));
 
             if(!active && defaultBtns !== undefined) {
                 this._activateDefautTool();
@@ -269,12 +301,16 @@ on, mouse, query, Deferred) {
             }
             else if (this.config.activeTool !== "" && has(this.config.activeTool)) {
                 toolbar.activateTool(this.config.activeTool);
-            } 
+            }
             // else {
             //     toolbar._closePage();
             // }
         },
-        
+
+        closePage: function() {
+
+        },
+
         // // menu click
         // _menuClick: function () {
         //     if (query("#panelTools").style("display") == "block") {

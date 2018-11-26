@@ -1,21 +1,21 @@
 define([
-    "dojo/Evented", "dojo/_base/declare", "dojo/_base/lang", "dojo/has", "dojo/dom","esri/kernel", 
+    "dojo/Evented", "dojo/_base/declare", "dojo/_base/lang", "dojo/has", "dojo/dom","esri/kernel",
     "dijit/_WidgetBase", "dijit/_TemplatedMixin", "dojo/on",
     "dojo/query", "dijit/registry",
-    "dojo/text!application/LanguageSelect/templates/LanguageSelect.html", 
+    "dojo/text!application/LanguageSelect/Templates/LanguageSelect.html",
     "dojo/i18n!application/nls/LanguageSelect",
     "dijit/form/DropDownButton", "dijit/DropDownMenu", "dijit/MenuItem",
-    "dojo/dom-class", "dojo/dom-attr", "dojo/dom-style", 
-    "dojo/dom-construct", "dojo/_base/event", "esri/lang", 
+    "dojo/dom-class", "dojo/dom-attr", "dojo/dom-style",
+    "dojo/dom-construct", "dojo/_base/event", "esri/lang",
     "dojo/NodeList-dom", "dojo/NodeList-traverse"
-    
+
     ], function (
         Evented, declare, _lang, has, dom, esriNS,
-        _WidgetBase, _TemplatedMixin, on, 
+        _WidgetBase, _TemplatedMixin, on,
         query, registry,
         LanguageSelectTemplate, i18n,
         DropDownButton, DropDownMenu, MenuItem,
-        domClass, domAttr, domStyle, 
+        domClass, domAttr, domStyle,
         domConstruct, event, esriLang
     ) {
     var Widget = declare("esri.dijit.LanguageSelect", [_WidgetBase, _TemplatedMixin, Evented], {
@@ -23,7 +23,7 @@ define([
 
         options: {
             locale: 'en-us',
-            languages:{}, 
+            languages:{},
             textColor:null,
             showLabel:true
         },
@@ -37,12 +37,12 @@ define([
             link.href = "js/LanguageSelect/Templates/LanguageSelect.css";
             link.type = "text/css";
             link.rel = "stylesheet";
-            query('html')[0].appendChild(link);
+            query('head')[0].appendChild(link);
         },
 
-        Click: function(e) { 
-            //console.log(e.srcElement.parentElement);
-            var menuItemDataSet = query(e.srcElement).closest('.dijitMenuItem')[0].dataset;
+        Click: function(e) {
+            //console.log(e.target.parentElement);
+            var menuItemDataSet = query(e.target).closest('.dijitMenuItem')[0].dataset;
             var docLocale = query('html')[0].lang;
             var locale = menuItemDataSet.code;
             if(!locale || locale==='' || locale === "undefined" || locale === undefined)
@@ -66,7 +66,7 @@ define([
         startup: function () {
             if(this.button) return;
 
-            var menu = new DropDownMenu({ 
+            var menu = new DropDownMenu({
                 style: "display: none;",
                 //id: 'languageMenu',
             });
@@ -94,6 +94,7 @@ define([
                         class: 'langMenuItemIcon',
                     }, iconCell);
                 }
+
                 var langHint = i18n.widgets.languageSelect.aria.changeLanguage+" "+lang.name;
                 dojo.attr(menuItem.domNode,'aria-label', esriLang.stripTags(langHint));
                 dojo.attr(menuItem.domNode,'title', esriLang.stripTags(langHint));
@@ -119,11 +120,21 @@ define([
 
             menu.startup();
 
-
-            
+            var currentHint = i18n.widgets.languageSelect.aria.currentLanguage+" "+(currentLanguage ? currentLanguage : document.documentElement.lang);
+            var btnLbl = this.defaults.showLabel ? i18n.widgets.languageSelect.language : "";
+            if(!currentIcon) {
+                var shortName = document.documentElement.lang.substring(0,2).toUpperCase();
+                var langName = this.defaults.languages.filter(function(l) {return l.shortName == shortName;})[0].name;
+                langName = langName.replace(/<.*?>/g, '');
+                btnLbl += ' <span aria-label="'+langName+'" style="font-weight:bold;">'+shortName+'</span>';
+            }
+            if(this.defaults.textColor) {
+                btnLbl = '<span style="color:'+this.defaults.textColor+';">'+btnLbl+'</span>';
+            }
 
             this.button = new DropDownButton({
-                label: currentLocale,
+                label: btnLbl,
+                title: currentHint,
                 dropDown: menu,
                 id: 'languageButton',
                 role: 'application',
@@ -132,24 +143,20 @@ define([
 
             if(currentIcon) {
                 dojo.removeClass(this.button.iconNode, "dijitNoIcon");
-                dojo.place(currentIcon, this.button.iconNode);
-                var currentHint = i18n.widgets.languageSelect.aria.currentLanguage+" "+currentLanguage;
+                dojo.place(currentIcon, query(this.button._buttonNode).query(".dijitReset").query(".dijitArrowButtonChar")[0], "after");
                 dojo.attr(this.button.iconNode,'aria-label', currentHint);
                 dojo.attr(this.button.iconNode,'title', esriLang.stripTags(currentHint));
-            } else {
-                if(this.defaults.textColor)
-                    dojo.attr(this.button,'style', 'color:'+this.defaults.textColor+';');
             }
 
-            if(this.defaults.showLabel) {
-                domConstruct.create("label", {
-                    for: 'languageButton',
-                    innerHTML: i18n.widgets.languageSelect.language,
-                    title: i18n.widgets.languageSelect.changeHere,
-                    'aria-label': i18n.widgets.languageSelect.changeHere,
-                    tabindex: -1
-                }, this.domNode);
-            }
+            // if(this.defaults.showLabel) {
+            //     domConstruct.create("label", {
+            //         for: 'languageButton',
+            //         innerHTML: i18n.widgets.languageSelect.language,
+            //         title: i18n.widgets.languageSelect.changeHere,
+            //         'aria-label': i18n.widgets.languageSelect.changeHere,
+            //         tabindex: -1
+            //     }, this.domNode);
+            // }
 
             this.domNode.appendChild(this.button.domNode);
 

@@ -17,8 +17,11 @@
 define({
     root: ({
         "map": {
-            "error": "Unable to create map"
+            "error": "Unable to create map",
+            "overviewTip": "Drag to change the Map Extent,\nor focus and use Arrow keys.",
+            "symbol": "symbol"
         },
+        "EsriWorldGeocoder": "Esri World Geocoder",
         "tools":{
             "search":{
                 "error": "Location could not be found",
@@ -34,7 +37,8 @@ define({
 			      "label3": 'Landscape',
 			      "label4": 'Portrait'
 			    },
-			    "legend": "Add legend to output"
+			    "legend": "Add legend to output",
+                clearGraphicLayer : "Clear Graphic Layer"
 			},
 			"share": {
 				"extent": "Use current map extent",
@@ -52,10 +56,13 @@ define({
         	"locate": "Find my Location",
             "features" : "Feature List",
             "filter" : "Filters",
+            "infoPanel" : "Info Panel",
+            "geoCoding" : "Reverse Geocode",
             "instructions": "Instructions",
             "legend": "Legend",
         	"bookmarks": "Bookmarks",
-        	"layers": "Layers",
+            "layerManager": "Layer Manager",
+            "layers": "Layers",
         	"basemap": "Basemap Gallery",
         	"overview": "Overview map",
         	"measure": "Measure",
@@ -63,23 +70,31 @@ define({
         	"time": "Time",
         	"print": "Print",
         	"details": "Details",
-        	"share": "Share"
+        	"share": "Share",
+            "vsplitter" : "Click and drag or focus and use left/right arrows to resize. \nDouble-click or type Enter for optimal size."
         },
         "skip":{
             "tools" : "Skip to Tools",
             "search" : "Skip to Search",
             "content" : "Skip to Content",
-            "splitter" : "Skip to Splitter",
+            "hsplitter" : "Skip to Horizontal Splitter",
             "map" : "Skip to Map",
             "help" : "Skip to Help",
-            "featureDetaills" : "Skip to Feature Details"
+            "featureDetaills" : "Skip to Feature Details",
+            "vsplitter" : "Skip to Vertical Splitter",
+            "tableHeader" : "Skip to Feature Table Header",
+            "table" : "Skip to Feature Table",
         },
         search : "Search: ",
         searchPlaceholder: "Find address or place",
         searchEnterCriteria : "Enter search term for",
-        pressAlt : "Press ALT + 0 to 7 keys for fast navigation",
+        pressAlt : "Press ALT + digit keys for fast navigation",
         instructions:"instructions",
-        wcagViewer : "Accessible Viewer"
+        moreHelp : "More Help",
+        wcagViewer : "Accessible Viewer",
+        leftCollapse: "Collapse Left Panel",
+        leftExpand: "Expand Left Panel",
+        moreHelp : "More Help",
     }),
 "ar": 1,
 "cs": 1,
