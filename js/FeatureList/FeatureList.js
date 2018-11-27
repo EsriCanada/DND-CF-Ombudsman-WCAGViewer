@@ -2,6 +2,7 @@ define(["dojo/Evented", "dojo/_base/declare", "dojo/_base/lang", "dojo/has", "es
     "dijit/_WidgetBase", "dijit/_TemplatedMixin", "dojo/on",
     "dojo/Deferred", "dojo/promise/all", "dojo/query",
     "esri/tasks/query", "esri/tasks/QueryTask",
+    "dojox/layout/ContentPane",
     "dojo/text!application/FeatureList/Templates/FeatureList.html",
     "dojo/dom", "dojo/dom-class", "dojo/dom-attr", "dojo/dom-style", "dojo/dom-construct", "dojo/_base/event",
     "dojo/string",
@@ -19,6 +20,7 @@ define(["dojo/Evented", "dojo/_base/declare", "dojo/_base/lang", "dojo/has", "es
         _WidgetBase, _TemplatedMixin, on,
         Deferred, all, query,
         Query, QueryTask,
+        ContentPane,
         FeatureList,
         dom, domClass, domAttr, domStyle, domConstruct, event,
         string,
@@ -82,8 +84,17 @@ define(["dojo/Evented", "dojo/_base/declare", "dojo/_base/lang", "dojo/has", "es
                       }
                     });
             }
-            this.css = {
-            };
+            // this.css = {
+            // };
+            var featureListHeader = dom.byId('pageHeader_features');
+            dojo.create('div', {
+                id: 'featureListCount',
+                class:'fc bg',
+                'aria-live': 'polite',
+                'aria-atomic': 'true',
+                tabindex: 0
+            },featureListHeader);
+
         },
 
         _getLayers : function(layers) {
@@ -120,23 +131,12 @@ define(["dojo/Evented", "dojo/_base/declare", "dojo/_base/lang", "dojo/has", "es
             }));
         },
 
-        FocusDetails: function() {
-            if(!this._isVisible()) return;
-
-            var details = this.domNode.querySelector('.showAttr');
-            if(details) {
-                var page = query(details).closest('.borderLi')[0];
-                page.querySelector('.checkbox').focus();
-            }
-        },
-
         _isVisible : function() {
             var page = query(this.domNode).closest('.page')[0];
             return dojo.hasClass(page, "showAttr");
         },
 
         _clearMarker: function() {
-            //this.map.graphics.clear();
             this.map.graphics.graphics.forEach(lang.hitch(this, function(gr) {
                 if(gr.name && gr.name === 'featureMarker') {
                     this.map.graphics.remove(gr);
@@ -147,11 +147,12 @@ define(["dojo/Evented", "dojo/_base/declare", "dojo/_base/lang", "dojo/has", "es
         __reloadList : function(ext) {
             var deferred = new Deferred();
 
-            var list = query("#featuresList")[0];
+            lang.hitch(window._this, window._this.showBadge(false));
+
+            var list = dom.byId('featuresList');
             this._clearMarker();
             window.tasks.filter(function(t) {
                 return t.layer.visible && t.layer.visibleAtMapScale;// && t.layer.infoTemplate;
-                // return t.layer.visible && t.layer.visibleAtMapScale;
             }).forEach(lang.hitch(this.map, function(t) {
                 t.query.geometry = ext.extent;
                 try {
@@ -163,84 +164,54 @@ define(["dojo/Evented", "dojo/_base/declare", "dojo/_base/lang", "dojo/has", "es
                     // ignore
                 }
             }));
+
             var promises = all(window.tasks.map(function(t) {return t.result;}));
-            promises.then(
-                function(results) {
-                    list.innerHTML = "";
-                    var preselected = null;
-                    if(results) for(var i = 0; i<results.length; i++)
-                    {
-                        var layer = window.tasks[i].layer;
-                        if(layer.visible && layer.visibleAtMapScale && layer.infoTemplate) {
-                            r = results[i];
 
-                            if(r) {
-                                var content = '<table tabindex=0 class="FeatureTableAttributes">';
+            promises.then(function(results) {
+                list.innerHTML = "";
+                var count = 0;
+                var preselected = null;
+                if(results) for(var i = 0; i<results.length; i++)
+                {
+                    var layer = window.tasks[i].layer;
+                    if(layer.visible && layer.visibleAtMapScale && layer.infoTemplate) {
+                        r = results[i];
 
-                                var fieldsMap = layer.infoTemplate._fieldsMap;
-                                for(var p in fieldsMap) {
-                                    if(fieldsMap.hasOwnProperty(p) && fieldsMap[p].visible)
-                                    {
-                                        var pField = fieldsMap[p];
-                                        var fieldName = '${'+pField.fieldName+'}';
-                                        var fieldValue = fieldName;
-                                        if(pField.format)
-                                        {
-                                            if(pField.format.dateFormat) {
-                                                fieldValue='FORMAT_DATE('+fieldName+',"'+pField.format.dateFormat+'")';
-                                            }
-                                            else if(pField.format.time) {
-                                                fieldValue='FORMAT_TIME('+fieldName+',"'+pField.format.time+'")';
-                                            }
-                                            else if(pField.format.hasOwnProperty("digitSeparator")) {
-                                                fieldValue='FORMAT_NUM('+fieldName+',"'+pField.format.places+'|'+pField.format.digitSeparator+'")';
-                                            }
-                                            else {
-                                                fieldValue=fieldName;
-                                            }
-                                        }
-
-                                        // content+='<tr class="featureItem_${_layerId}_${_featureId} hideAttr" tabindex="0" aria-label="'+pField.label+', '+fieldValue+',"">\n';
-                                        content+='<tr class="featureItem_${_layerId}_${_featureId} hideAttr">\n';
-                                        // content+='    <td valign="top"></td>\n';
-                                        content+='    <th valign="top" align="right">'+pField.label+'</th>\n';
-                                        // content+='    <td valign="top">:</td>\n';
-                                        content+='    <td valign="top">'+fieldValue+'</td>\n';
-                                        content+='</tr>\n';
-                                    }
+                        if(r) {
+                            count += r.features.length;
+                            for(var j = 0; j<r.features.length; j++) {
+                                var f = r.features[j];
+                                if(window._prevSelected && window._prevSelected.split('_')[1] == f.attributes[r.objectIdFieldName]) {
+                                    preselected = f;
                                 }
-                                content += '</table>';
-                                for(var j = 0; j<r.features.length; j++) {
-                                    var f = r.features[j];
-                                    if(window._prevSelected && window._prevSelected.split('_')[1] == f.attributes[r.objectIdFieldName]) {
-                                        preselected = f;
-                                    }
 
-                                    var featureListItem = this._getFeatureListItem(i, f, r.objectIdFieldName, layer, content, listTemplate);
-                                    if(featureListItem)
-                                    {
-                                        domConstruct.create("li", {
-                                            // tabindex : 0,
-                                            innerHTML : featureListItem
-                                        }, list);
-                                    }
-                                }
+                                var featureListItem = this._getFeatureListItem(i, f, r.objectIdFieldName, layer, listTemplate);
+                                if(featureListItem)
+                                {
+                                    var li = domConstruct.create("li", {
+                                        // tabindex : 0,
+                                        innerHTML : featureListItem
+                                    }, list);
+                               }
                             }
                         }
                     }
-                    if(!preselected) {
-                        window._prevSelected = null;
-                    } else {
-                        var checkbox = query("#featureButton_"+window._prevSelected)[0];
-                        if(checkbox) {
-                            checkbox.checked = true;
-                            window.featureExpand(checkbox, true);
-                            checkbox.focus();
-                        }
-                    }
-                deferred.resolve(true);
                 }
-            );
+                if(!preselected) {
+                    window._prevSelected = null;
+                } else {
+                    var checkbox = query("#featureButton_"+window._prevSelected)[0];
+                    if(checkbox) {
+                        checkbox.checked = true;
+                        window.featureExpand(checkbox, true);
+                        checkbox.focus();
+                    }
+                }
+
+                dom.byId('featureListCount').innerHTML = Ri18n.totalCount.format(count);
+
+                deferred.resolve(true);
+            });
             return deferred.promise;
         },
 
@@ -313,7 +284,6 @@ define(["dojo/Evented", "dojo/_base/declare", "dojo/_base/lang", "dojo/has", "es
 
             window.featureExpandAndZoom = function(event, checkbox) {
                 if(event.charCode === 43 || event.charCode === 45 || event.charCode === 46) { // +,- or .
-                    //console.log(event.charCode, checkbox);
                     checkbox.checked = !checkbox.checked;
                     window.featureExpand(checkbox, false);
                     if(checkbox.checked) {
@@ -327,7 +297,7 @@ define(["dojo/Evented", "dojo/_base/declare", "dojo/_base/lang", "dojo/has", "es
             window.featureExpand = function(checkBox, restore) {
                 if(_prevSelected && !restore) {
                     dojo.query('.featureItem_'+_prevSelected).forEach(function(e) {
-                        dojo.removeClass(e, 'showAttr');
+                        // dojo.removeClass(e, 'showAttr');
                         dojo.addClass(e, 'hideAttr');
                         var li = query(e).closest('li');
                         li.removeClass('borderLi');
@@ -342,7 +312,7 @@ define(["dojo/Evented", "dojo/_base/declare", "dojo/_base/lang", "dojo/has", "es
                 var objectIdFieldName = r.layer.objectIdField;
                 var fid = values[1];
                 var layer = r.layer;
-                // layer._map.graphics.clear();
+
                 layer._map.graphics.graphics.forEach(lang.hitch(layer._map.graphics, function(gr) {
                     if(gr.name && gr.name === 'featureMarker') {
                         this.remove(gr);
@@ -350,48 +320,97 @@ define(["dojo/Evented", "dojo/_base/declare", "dojo/_base/lang", "dojo/has", "es
                 }));
 
                 lang.hitch(window._this, window._this.showBadge(checkBox.checked));
-                //lang.hitch(this, this.showBadge(checkBox.checked));
 
+                var li = query(checkBox).closest('li');
+                li.addClass('borderLi');
                 if(checkBox.checked)
                 {
                     _prevSelected = values[0]+'_'+fid;
-                    dojo.query('.featureItem_'+_prevSelected).forEach(function(e) {
-                        //dojo.addClass(e, 'showAttr');
-                        dojo.removeClass(e, 'hideAttr');
-                        var li = query(e).closest('li');
-                        li.addClass('borderLi');
-                    });
+                    var featureControls = li[0].querySelector('.featureControls');
+                    dojo.removeClass(featureControls, 'hideAttr');
+                    var featureContent = li[0].querySelector('.featureContent');
+                    dojo.removeClass(featureContent, 'hideAttr');
+                    var featureContentPane = li[0].querySelector('.featureContentPane');
 
-                    q = new Query();
+                    var q = new Query();
                     q.where = objectIdFieldName+"="+fid;
-                    q.outFields = [objectIdFieldName];
+                    q.outFields = layer.fields.map(function(fld) {return fld.name;});//objectIdFieldName];
                     q.returnGeometry = true;
                     r.task.execute(q).then(function(ev) {
-                        //console.log(ev);
+                        var feature = ev.features[0];
+                        if(!featureContentPane.attributes.hasOwnProperty('widgetid')) {
+                            var contentPane = new ContentPane({ }, featureContentPane);
+                            contentPane.startup();
 
-                        var graphic = ev.features[0];
+                            var myContent = layer.infoTemplate.getContent(feature);
+
+                            contentPane.set("content", myContent).then(lang.hitch(this, function() {
+                                var mainView = featureContentPane.querySelector('.esriViewPopup');
+                                if(mainView) {
+                                    domAttr.set(mainView, 'tabindex',0);
+
+                                    var mainSection = mainView.querySelector('.mainSection');
+                                    if(mainSection) {
+                                        domConstruct.destroy(mainSection.querySelector('.header'));
+                                    }
+
+                                    var attrTables = query('.attrTable', mainSection);
+                                    if(attrTables && attrTables.length > 0) {
+                                        for(var i = 0; i<attrTables.length; i++) {
+                                            var attrTable = attrTables[i];
+                                            // domAttr.set(attrTable, 'role', 'presentation');
+                                            var attrNames = query('td.attrName', attrTable);
+                                            if(attrNames && attrNames.length > 0) {
+                                                for(var j = 0; j<attrNames.length; j++) {
+                                                    attrNames[j].outerHTML = attrNames[j].outerHTML.replace(/^<td/, '<th').replace(/td>$/, 'th>');
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    var images = query('.esriViewPopup img', myContent.domNode);
+                                    if(images) {
+                                        images.forEach(function(img) {
+                                            var alt = domAttr.get(img, 'alt');
+                                            if(!alt) {
+                                                domAttr.set(img,'alt','');
+                                            } else {
+                                                domAttr.set(img,'tabindex',0);
+                                                if(!domAttr.get(img, 'title'))
+                                                {
+                                                    domAttr.set(img,'title', alt);
+                                                }
+                                            }
+                                        });
+                                    }
+                                }
+                            }));
+                        }
+
+                        li[0].scrollIntoView({block: "start", inline: "nearest", behavior: "smooth"});
+
                         var markerGeometry;
                         var marker;
 
-                        switch (graphic.geometry.type) {
+                        switch (feature.geometry.type) {
                             case "point":
-                                markerGeometry = graphic.geometry;
+                                markerGeometry = feature.geometry;
                                 marker = markerSymbol;
                                 break;
                             case "extent":
-                                markerGeometry = graphic.getCenter();
+                                markerGeometry = feature.getCenter();
                                 // marker = new SimpleMarkerSymbol
                                 break;
                             case "polyline" :
-                                markerGeometry = graphic.geometry;
+                                markerGeometry = feature.geometry;
                                 marker = new CartographicLineSymbol(
                                     CartographicLineSymbol.STYLE_SOLID, new Color([0, 127, 255]), 10,
                                     CartographicLineSymbol.CAP_ROUND,
                                     CartographicLineSymbol.JOIN_ROUND, 5);
                                 break;
                             default:
-                                // if the graphic is a polygon
-                                markerGeometry = graphic.geometry;
+                                // if the feature is a polygon
+                                markerGeometry = feature.geometry;
                                 marker = new SimpleFillSymbol(
                                     SimpleFillSymbol.STYLE_SOLID,
                                     new SimpleLineSymbol(
@@ -405,12 +424,9 @@ define(["dojo/Evented", "dojo/_base/declare", "dojo/_base/lang", "dojo/has", "es
                         gr.name = 'featureMarker';
                         layer._map.graphics.add(gr);
                     });
-                    // layer.selectFeatures(q, FeatureLayer.SELECTION_NEW).then(function(f) {
-                    //     f[0].symbol.size = 40;
-                    // });
                 } else {
+                    li.removeClass('borderLi');
                     dojo.query('.featureItem_'+_prevSelected).forEach(function(e) {
-                        dojo.removeClass(e, 'showAttr');
                         dojo.addClass(e, 'hideAttr');
                     });
                     window._prevSelected = null;
@@ -420,30 +436,15 @@ define(["dojo/Evented", "dojo/_base/declare", "dojo/_base/lang", "dojo/has", "es
 
             on(this.map, "extent-change", lang.hitch(this, this._reloadList), this);
 
-            _getFeatureListItem = function(r, f, objectIdFieldName, layer, content, listTemplate) {
+            _getFeatureListItem = function(r, f, objectIdFieldName, layer, listTemplate) {
                 try {
-                    var featureId = f.attributes[objectIdFieldName];
-                    var description = layer.infoTemplate._getPopupValues(f).description;
-                    if(description && description != "")
-                        content = description;
                     var attributes = {
-                        _featureId:featureId,
-                        _layerId:r,
-                        _title:layer.infoTemplate.title(f),
-                        _content:content,
+                        _featureId: f.attributes[objectIdFieldName],
+                        _layerId: r,
+                        _title: layer.infoTemplate.title(f),
                         _panTo: i18n.widgets.featureList.panTo,
                         _zoomTo: i18n.widgets.featureList.zoomTo,
-                        hint:Ri18n.skip.featureDetaills,
                     };
-                    lang.mixin(attributes, f.attributes);
-                    var nulls = window.tasks[r].layer.fields.map(function(f){return f.name;});
-                    var nullAttrs ={};
-                    nulls.forEach(function(n) {
-                        if(!attributes[n])
-                        {
-                            attributes[n]='';
-                        }
-                    });
 
                     var _substitute = function(template,attrs) {
                         var regex = /\${((?:\w)*)}/gm;
@@ -458,7 +459,7 @@ define(["dojo/Evented", "dojo/_base/declare", "dojo/_base/lang", "dojo/has", "es
                             }
 
                             matches.push(m);
-                        };
+                        }
 
                         matches.forEach(function(g) {
                             // console.log('g', g[0], g[1]);
@@ -471,71 +472,8 @@ define(["dojo/Evented", "dojo/_base/declare", "dojo/_base/lang", "dojo/has", "es
 
                         return(template);
                     };
-                    content = _substitute(content, attributes);
 
-                    // content = string.substitute(content, attributes);
-                    listTemplate=_substitute(listTemplate, attributes);
-                    var result =  _substitute(listTemplate, attributes);
-                    var re = /((>)((?:http:\/\/www\.|https:\/\/www\.|ftp:\/\/www.|www\.)[a-z0-9]+(?:[\-\.]{1}[a-z0-9]+)*\.[a-z]{2,5}(:[0-9]{1,5})?(?:\/.*)?)(?:<))|(FORMAT_(DATE|TIME|NUM)\((-?\d*\.?\d*),\"(.+)\"\))/gm;
-                    do {
-                        var matches = re.exec(result);
-                        if(!matches) break;
-                        if(matches[6] && (!matches[7] || matches[7] === '')) {
-                            result = result.replace(matches[5], '');
-                        }
-                        if(matches[2]===">") {
-                            result = result.replace(matches[1], "><a href='"+matches[3]+"' target='_blank'>"+i18n.widgets.featureList.followLink+"</a><");
-                        }
-                        else if(matches[6]==="DATE") {
-                            var dateNum = matches[7];
-                            if(!isNaN(parseFloat(dateNum)) && isFinite(dateNum)) {
-                                var date = new Date(Number(dateNum));
-                                result = result.replace(matches[5], date.toLocaleDateString(
-                                    document.documentElement.lang,
-                                    {
-                                        year: "numeric", month: "long", day: "numeric"
-                                    }
-                                ));
-                            } else
-                                result = result.replace(matches[5],'');
-                        }
-                        else if(matches[6]==="TIME") {
-                            var timeNum = matches[7];
-                            if(!isNaN(parseFloat(timeNum)) && isFinite(timeNum)) {
-                                var time = new Date(Number(timeNum));
-                                result = result.replace(matches[5], time.toLocaleDateString(
-                                    document.documentElement.lang,
-                                    {
-                                        year: "numeric", month: "numeric", day: "numeric",
-                                        hour: "2-digit", minute: "2-digit"
-                                    }
-                                ));
-                            } else
-                                result = result.replace(matches[5],'');
-                        }
-                        else if(matches[6]==="NUM") {
-                            var num = matches[7];
-                            if(!isNaN(parseFloat(num)) && isFinite(num)) {
-                                num = Number(num);
-                                var d89=matches[8].split('|');
-                                var dec = Number(d89[0]);
-                                var useSeparator = d89[1] === "true";
-                                num = num.toLocaleString(document.documentElement.lang,
-                                    {
-                                        minimumFractionDigits: dec,
-                                        maximumFractionDigits: dec,
-                                        useGrouping: useSeparator
-                                    }
-                                );
-
-                                result = result.replace(matches[5], num);
-                            } else
-                                result = result.replace(matches[5],'');
-                        }
-
-                    } while (true);
-
-                    return result;
+                    return _substitute(listTemplate, attributes);
                 } catch (e) {
                     console.log("Error on feature ("+featureId+")\n\t "+layer.infoTemplate.title(f)+"\n\t",e);
                     return null;
