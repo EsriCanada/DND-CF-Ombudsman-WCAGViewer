@@ -1,3 +1,5 @@
+"use strict";
+
 define(["dojo/Evented", "dojo/_base/declare", "dojo/_base/lang", "dojo/has", "esri/kernel",
     "dijit/_WidgetBase", "dijit/_TemplatedMixin", "dijit/registry",
     "dojo/on",
@@ -15,7 +17,6 @@ define(["dojo/Evented", "dojo/_base/declare", "dojo/_base/lang", "dojo/has", "es
     "esri/domUtils",
     "esri/dijit/Popup",
     "application/PopupInfo/PopupInfoHeader",
-    "application/SuperNavigator/SuperNavigator",
     "dojo/NodeList-dom", "dojo/NodeList-traverse"
 
     ], function (
@@ -33,7 +34,7 @@ define(["dojo/Evented", "dojo/_base/declare", "dojo/_base/lang", "dojo/has", "es
         string,
         i18n,
         domUtils,
-        Popup, PopupInfoHeader, SuperNavigator
+        Popup, PopupInfoHeader
     ) {
 
     ready(function(){
@@ -318,7 +319,7 @@ define(["dojo/Evented", "dojo/_base/declare", "dojo/_base/lang", "dojo/has", "es
                             )
                             : '')+
                     "</h3>"+
-                    "<div id='thumb' class='thumbFeature' title='"+title+"'><img src='"+this.searchMarker.url+"' alt='"+title+"''/></div>"+
+                    "<div id='thumb' class='thumbFeature'><img src='"+this.searchMarker.url+"' alt='"+i18n.widgets.popupInfo.symbol+"''/></div>"+
                     "<div class='hzLine'></div>"+
 
                     "<table class='address-tooltip__address-info'>"+result+"</table>"+
@@ -398,13 +399,18 @@ define(["dojo/Evented", "dojo/_base/declare", "dojo/_base/lang", "dojo/has", "es
                             //     domAttr.set(header[0], 'tabindex', 0);
                             // }
 
-                            var attrTable = query('.attrTable', mainSection[0]);
-                            if(attrTable && attrTable.length > 0) {
-                                domAttr.set(attrTable[0], 'role', 'presentation');
-                                // var rows = query('tr', attrTable[0]);
-                                // if(rows) {
-                                //     rows.forEach(function(row) {domAttr.set(row, 'tabindex', 0);});
-                                // }
+                            var attrTables = query('.attrTable', mainSection[0]);
+                            if(attrTables && attrTables.length > 0) {
+                                // domAttr.set(attrTables[0], 'role', 'presentation');
+                                for(var i = 0; i<attrTables.length; i++) {
+                                    var attrTable = attrTables[i];
+                                    var attrNames = query('td.attrName', attrTable);
+                                    if(attrNames && attrNames.length > 0) {
+                                        for(var j = 0; j<attrNames.length; j++) {
+                                            attrNames[j].outerHTML = attrNames[j].outerHTML.replace(/^<td/, '<th').replace(/td>$/, 'th>');
+                                        }
+                                    }
+                                }
                             }
                             // else {
                             //     var description = query('[dojoattachpoint=_description]', mainSection[0]);

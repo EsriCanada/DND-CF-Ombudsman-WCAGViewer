@@ -166,7 +166,8 @@ define(["dojo/Evented", "dojo/_base/declare", "dojo/_base/lang", "dojo/has", "es
 
             on(popup, "SelectionChange", lang.hitch(this, function() {
                 if(popup.selectedIndex>=0) {
-                    dom.byId('featureIndex').innerHTML = popup.selectedIndex + 1;
+                    this.setIndexOfTotal(popup.selectedIndex, this.total);
+                    // domAttr.set(this._indexOfTotal, 'aria-label', this.map.infoWindow.features[popup.selectedIndex].infoTemplate.title(this.map.infoWindow.features[popup.selectedIndex]));
                 }
             }));
 
@@ -180,6 +181,10 @@ define(["dojo/Evented", "dojo/_base/declare", "dojo/_base/lang", "dojo/has", "es
             }));
 
             this.setTotal(-1);
+        },
+
+        setIndexOfTotal : function(index, total) {
+            this._indexOfTotal.innerHTML = i18n.widgets.popupInfo.resultOf.format(index + 1, total);
         },
 
         pagerIsVisible : function() {
@@ -227,7 +232,8 @@ define(["dojo/Evented", "dojo/_base/declare", "dojo/_base/lang", "dojo/has", "es
             domStyle.set(ctrlNode, 'display', (this.total > 0 ? 'inline' : 'none'));
             domStyle.set(pagerNode, 'display', (this.total > 1 ? 'inline' : 'none'));
 
-            dom.byId('totalFeatures').innerHTML = this.total;
+            // this._totalFeatures.innerHTML = this.total;
+            this.setIndexOfTotal(this.map.infoWindow.selectedIndex + 1, this.total);
 
             // if(this.total===0) {
             //     popupInfo.clear();
